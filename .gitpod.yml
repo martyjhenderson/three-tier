@@ -1,0 +1,8 @@
+tasks:
+  - name: Install tfenv
+    command: brew install tfenv
+
+vscode:
+  extensions:
+    - TabNine.tabnine-vscode
+    - hashicorp.terraform
