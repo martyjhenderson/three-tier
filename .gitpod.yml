@@ -6,7 +6,7 @@ tasks:
     command: brew install tflint
   - name: Install Terraform
     command: |
-      gp await-sync tfenv && \
+      gp sync-awat tfenv && \
       cd $GITPOD_REPO_ROOT/terraform && \
       tfenv install min-required && \
       tfenv use min-required && \
