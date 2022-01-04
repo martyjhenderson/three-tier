@@ -1,10 +1,12 @@
 tasks:
   - name: Install tfenv
-    command: brew install tfenv
+    init: brew install tfenv
+    command: gp sync-done tfenv
   - name: Install tflint
     command: brew install tflint
   - name: Install Terraform
     command: |
+      gp await-sync tfenv && \
       cd $GITPOD_REPO_ROOT/terraform && \
       tfenv install min-required && \
       tfenv use min-required && \
