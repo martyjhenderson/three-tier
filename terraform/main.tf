@@ -12,56 +12,21 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_vpc" "main" {
-  cidr_block = "10.10.0.0/16"
 
-  tags = {
-    Project = "mjh-demo"
-  }
-}
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 2"
 
-resource "aws_subnet" "pub_subnet_1a" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.10.1.0/24"
-  availability_zone       = "us-east-1a"
-  map_public_ip_on_launch = true
+  name = "mjh-demo-vpc"
+  cidr = "10.0.0.0/18"
 
-  tags = {
-    Project = "mjh-demo"
-  }
-}
+  azs              = ["${aws.region}a", "${aws.region}b", "${aws.region}c"]
+  public_subnets   = ["10.0.0.0/24", "10.0.1.0/24", "10.0.2.0/24"]
+  private_subnets  = ["10.0.3.0/24", "10.0.4.0/24", "10.0.5.0/24"]
+  database_subnets = ["10.0.7.0/24", "10.99.8.0/24", "10.0.9.0/24"]
 
-resource "aws_subnet" "pub_subnet_1b" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.10.2.0/24"
-  availability_zone       = "us-east-1b"
-  map_public_ip_on_launch = true
+  create_database_subnet_group = true
 
-  tags = {
-    Project = "mjh-demo"
-  }
-}
-
-resource "aws_subnet" "prv_subnet_1a" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.10.3.0/24"
-  availability_zone       = "us-east-1a"
-  map_public_ip_on_launch = false
-
-  tags = {
-    Project = "mjh-demo"
-  }
-}
-
-resource "aws_subnet" "prv_subnet_1b" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.10.4.0/24"
-  availability_zone       = "us-east-1b"
-  map_public_ip_on_launch = false
-
-  tags = {
-    Project = "mjh-demo"
-  }
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -110,4 +75,24 @@ resource "random_pet" "bucket_name" {
 resource "aws_s3_bucket" "s3_backend" {
     bucket = "s3_backend_${random_pet.server.id}" 
     acl = "private"   
+}
+
+module "security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 4"
+
+  name        = "postgres-sg"
+  description = "PostgreSQL security group"
+  vpc_id      = module.vpc.vpc_id
+
+  # ingress
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      description = "PostgreSQL access"
+      cidr_blocks = module.vpc.vpc_cidr_block
+    },
+  ]
 }
