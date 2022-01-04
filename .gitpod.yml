@@ -1,6 +1,14 @@
 tasks:
   - name: Install tfenv
     command: brew install tfenv
+  - name: Install tflint
+    command: brew install tflint
+  - name: Install Terraform
+    command: |
+      cd $GITPOD_REPO_ROOT/terraform && \
+      tfenv install min-required && \
+      tfenv use min-required && \
+      cd $GITPOD_REPO_ROOT
 
 vscode:
   extensions:
