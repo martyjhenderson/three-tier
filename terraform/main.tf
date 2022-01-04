@@ -12,12 +12,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
-
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 2"
-
-  name = "mjh-demo-vpc"
+## VPCs 
+resource "aws_vpc" "main"  {
   cidr = "10.0.0.0/18"
 
   azs              = ["${aws.region}a", "${aws.region}b", "${aws.region}c"]
@@ -29,6 +25,7 @@ module "vpc" {
 
 }
 
+## IGW and Public Routing
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
@@ -50,40 +47,17 @@ resource "aws_route_table" "pub_route" {
   }
 }
 
-resource "aws_route_table_association" "rt_assoc_1a" {
-  subnet_id      = aws_subnet.pub_subnet_1a.id
+resource "aws_route_table_association" "rt_assoc_pub" {
+  subnet_id      = aws_vpc.main.public_subnets
   route_table_id = aws_route_table.pub_rt.id
 }
 
-resource "aws_route_table_association" "rt_assoc_1b" {
-  subnet_id      = aws_subnet.pub_subnet_1b.id
-  route_table_id = aws_route_table.pub_rt.id
-}
+## Security groups
 
-resource "aws_security_group" "general_sg" {
-  description = "HTTP egress to anywhere"
-  vpc_id      = aws_vpc.main.id
+resource "aws_security_group" "pg-sg"{
 
-  tags = {
-    Project = "mjh-demo"
-  }
-}
-
-resource "random_pet" "bucket_name" {
-}
-
-resource "aws_s3_bucket" "s3_backend" {
-    bucket = "s3_backend_${random_pet.server.id}" 
-    acl = "private"   
-}
-
-module "security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4"
-
-  name        = "postgres-sg"
   description = "PostgreSQL security group"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = aws_vpc.vpc.vpc_id
 
   # ingress
   ingress_with_cidr_blocks = [
@@ -92,7 +66,32 @@ module "security_group" {
       to_port     = 5432
       protocol    = "tcp"
       description = "PostgreSQL access"
-      cidr_blocks = module.vpc.vpc_cidr_block
+      cidr_blocks = aws_vpc.vpc.vpc_cidr_block
     },
   ]
+}
+
+## EC2 Instance
+resource "aws_instance" "webwebserver1" {
+  ami                    = "ami-0d5eff06f840b45e9"
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.webserver-sg.id]
+  subnet_id              = aws_subnet.public_subnets
+  tags = {
+    Name = "mjh-demo"
+  }
+}
+
+## RDS Instance
+
+resource "aws_db_instance" "pg-db" {
+  allocated_storage         = 5
+  engine                    = "postgres"
+  engine_version            = "13.4"
+  instance_class            = "db.t2.micro"
+  name                      = "pg-db"
+  username                  = "${var.database_user}"
+  password                  = "${var.database_password}"
+  db_subnet_group_name      = aws_vpc.main.database_subnets
+  vpc_security_group_ids    = ["${aws_security_group.rds.id}"]
 }
