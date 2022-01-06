@@ -13,6 +13,7 @@ tasks:
       cd $GITPOD_REPO_ROOT && \ 
       gp sync-done tfinstall
   - name: Initial Terraform
+    command: |
       gp sync-await tfinstall && \
       cd $GITPOD_REPO_ROOT/terraform && \
       terraform init && \
