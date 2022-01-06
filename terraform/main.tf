@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 3.0"
     }
+    kustomization = {
+      source  = "kbst/kustomize"
+      version = "0.2.0-beta.3"
+    }
   }
 }
 
@@ -152,7 +156,15 @@ resource "aws_iam_role" "eks-node" {
         "Service": "ec2.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
-    }
+    },
+    {
+    "Effect": "Allow",
+    "Action": [
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:RevokeSecurityGroupIngress"
+    ],
+    "Resource": "*"
+},
   ]
 }
 POLICY
@@ -286,5 +298,53 @@ resource "aws_autoscaling_group" "eks-demo" {
   
   tags = {
     Project = "mjh-demo"
+  }
+}
+
+## LB
+
+## See [Apply ALB Controller](alb-controller.md)
+
+## Note that we can't get this info until AFTER the cluster is created
+provider "helm" {
+  kubernetes {
+    host                   = aws_eks_cluster.eks-demo.cluster_endpoint
+    exec {
+      api_version = "client.authentication.k8s.io/v1alpha1"
+      args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.eks-demo.cluster_name]
+      command     = "aws"
+    }
+  }
+}
+
+provider "kustomization" {}
+
+
+data "kustomization" "alb-TargetGroupBinding" {
+  provider = kustomization
+  path = "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"
+}
+
+resource "kustomization_resource" "alb-TargetGroupBinding" {
+  provider = kustomization
+  for_each = data.kustomization.test.ids
+  manifest = data.kustomization.test.manifests[each.value]
+}
+
+
+
+resource "aws_iam_policy" "example" {
+  policy = data.aws_iam_policy_document.iam-policy.json
+}
+
+resource "helm_release" "nginx_ingress" {
+  name       = "eks-alb"
+
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "eks/aws-load-balancer-controller"
+
+  set {
+    name  = "clusterName"
+    value = aws_eks_cluster.eks-demo.cluster-name
   }
 }
