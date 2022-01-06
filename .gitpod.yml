@@ -3,7 +3,6 @@ image:
 tasks:
   - name: Install Terraform
     command: |
-      gp sync-await tfenv && \
       cd $GITPOD_REPO_ROOT/terraform && \
       tfenv install min-required && \
       tfenv use min-required && \
