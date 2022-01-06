@@ -1,9 +1,6 @@
+image:
+  file: .gitpod.Dockerfile
 tasks:
-  - name: Install tfenv
-    init: brew install tfenv
-    command: gp sync-done tfenv
-  - name: Install tflint
-    command: brew install tflint
   - name: Install Terraform
     command: |
       gp sync-await tfenv && \
