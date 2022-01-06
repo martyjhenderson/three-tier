@@ -1,5 +1,5 @@
 terraform {
-  required_version  = "1.0.11"
+  required_version = "1.0.11"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -17,7 +17,7 @@ provider "aws" {
 }
 
 ## VPCs 
-resource "aws_vpc" "main"  {
+resource "aws_vpc" "main" {
   cidr = "10.0.0.0/18"
 
   azs              = ["${aws.region}a", "${aws.region}b", "${aws.region}c"]
@@ -58,7 +58,7 @@ resource "aws_route_table_association" "rt_assoc_pub" {
 
 ## Security groups
 
-resource "aws_security_group" "pg-sg"{
+resource "aws_security_group" "pg-sg" {
 
   description = "PostgreSQL security group"
   vpc_id      = aws_vpc.vpc.vpc_id
@@ -80,20 +80,20 @@ resource "aws_security_group" "pg-sg"{
 ## RDS Instance
 
 resource "random_password" "db_pass" {
-  length           = 16
-  special          = true
+  length  = 16
+  special = true
 }
 
 resource "aws_db_instance" "pg-db" {
-  allocated_storage         = 5
-  engine                    = "postgres"
-  engine_version            = "13.4"
-  instance_class            = "db.t2.micro"
-  name                      = "pg-db"
-  username                  = var.database_user
-  password                  = random_password.db_pass.result
-  db_subnet_group_name      = aws_vpc.main.database_subnets
-  vpc_security_group_ids    = aws_security_group.pg-sg
+  allocated_storage      = 5
+  engine                 = "postgres"
+  engine_version         = "13.4"
+  instance_class         = "db.t2.micro"
+  name                   = "pg-db"
+  username               = var.database_user
+  password               = random_password.db_pass.result
+  db_subnet_group_name   = aws_vpc.main.database_subnets
+  vpc_security_group_ids = aws_security_group.pg-sg
 }
 
 ## EKS
@@ -131,7 +131,7 @@ resource "aws_security_group" "e2e-cluster" {
   name        = "terraform-eks-demo-cluster"
   description = "Cluster communication with worker nodes"
   vpc_id      = aws_vpc.main.id
-    egress {
+  egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -220,8 +220,8 @@ resource "aws_iam_role_policy_attachment" "eks-demo-cluster-AmazonEKSServicePoli
 }
 
 resource "aws_eks_cluster" "eks-demo" {
-  name            = var.cluster-name
-  role_arn        = aws_iam_role.eks-demo-cluster.arn
+  name     = var.cluster-name
+  role_arn = aws_iam_role.eks-demo-cluster.arn
 
   vpc_config {
     security_group_ids = aws_security_group.eks-cluster.id
@@ -295,7 +295,7 @@ resource "aws_autoscaling_group" "eks-demo" {
   min_size             = 1
   name                 = "terraform-eks-demo"
   vpc_zone_identifier  = aws_subnet.private_subnets.*.id
-  
+
   tags = {
     Project = "mjh-demo"
   }
@@ -308,7 +308,7 @@ resource "aws_autoscaling_group" "eks-demo" {
 ## Note that we can't get this info until AFTER the cluster is created
 provider "helm" {
   kubernetes {
-    host                   = aws_eks_cluster.eks-demo.cluster_endpoint
+    host = aws_eks_cluster.eks-demo.cluster_endpoint
     exec {
       api_version = "client.authentication.k8s.io/v1alpha1"
       args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.eks-demo.cluster_name]
@@ -322,7 +322,7 @@ provider "kustomization" {}
 
 data "kustomization" "alb-TargetGroupBinding" {
   provider = kustomization
-  path = "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"
+  path     = "github.com/aws/eks-charts/stable/aws-load-balancer-controller//crds?ref=master"
 }
 
 resource "kustomization_resource" "alb-TargetGroupBinding" {
@@ -338,7 +338,7 @@ resource "aws_iam_policy" "example" {
 }
 
 resource "helm_release" "nginx_ingress" {
-  name       = "eks-alb"
+  name = "eks-alb"
 
   repository = "https://aws.github.io/eks-charts"
   chart      = "eks/aws-load-balancer-controller"
