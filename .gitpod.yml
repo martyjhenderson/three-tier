@@ -10,9 +10,21 @@ tasks:
       cd $GITPOD_REPO_ROOT/terraform && \
       tfenv install min-required && \
       tfenv use min-required && \
+      cd $GITPOD_REPO_ROOT && \ 
+      gp sync-done tfinstall
+  - name: Initial Terraform
+      gp sync-await tfinstall && \
+      cd $GITPOD_REPO_ROOT/terraform && \
+      terraform init && \
       cd $GITPOD_REPO_ROOT
 
 vscode:
   extensions:
     - TabNine.tabnine-vscode
     - hashicorp.terraform
+
+github:
+  prebuilds:
+    master: true
+    pullRequests: true
+    addComment: true
