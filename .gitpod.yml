@@ -18,7 +18,7 @@ tasks:
       cd $GITPOD_REPO_ROOT/terraform && \
       terraform init && \
       tflint --init && \
-      cd $GITPOD_REPO_ROOT && \
+      cd $GITPOD_REPO_ROOT
 
 
 vscode:
