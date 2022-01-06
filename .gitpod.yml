@@ -12,12 +12,14 @@ tasks:
       tfenv use min-required && \
       cd $GITPOD_REPO_ROOT && \ 
       gp sync-done tfinstall
-  - name: Initial Terraform
+  - name: Init Terraform and TFlint
     command: |
       gp sync-await tfinstall && \
       cd $GITPOD_REPO_ROOT/terraform && \
       terraform init && \
-      cd $GITPOD_REPO_ROOT
+      tflint --init && \
+      cd $GITPOD_REPO_ROOT && \
+
 
 vscode:
   extensions:
