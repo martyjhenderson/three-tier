@@ -3,8 +3,12 @@
 This simply demo creates an AWS environment that contains:
 
   * A datastore
-  * A service that talks to a database
-  * Allows access for an external request
+    * Using RDS Postgres database
+    * Limited to intra CIDR block for access
+  * A service that talks to a database - an EKS cluster
+    * Using private networks for the worker nodes and cluster itself
+  * Allows access for an external request - an ALB using the [ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/)
+    * Leveraging annotations to determine if it should be an internal or external ALB
 
 With using [Terraform](https://www.terraform.io/)
 
